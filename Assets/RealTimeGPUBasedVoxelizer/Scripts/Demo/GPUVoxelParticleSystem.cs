@@ -25,6 +25,8 @@ namespace Voxelizer.Demo
         [SerializeField] protected int count = 65000;
         [SerializeField, Range(32, 256)] protected int resolution = 64;
 
+        //[SerializeField] protected GameObject AnimationObject;
+
         #region Particle properties
 
         [SerializeField] protected float speedScaleMin = 2.0f, speedScaleMax = 5.0f;
@@ -66,6 +68,8 @@ namespace Voxelizer.Demo
         }
       
         protected void Update () {
+            //transform.position = AnimationObject.GetComponent<Transform>().position;
+
             Sample();
             Compute(updateKer, Time.deltaTime);
 
