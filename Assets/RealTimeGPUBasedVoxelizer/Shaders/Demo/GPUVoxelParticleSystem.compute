@@ -18,10 +18,14 @@ uint _VoxelCount;
 RWStructuredBuffer<VoxelParticle> _ParticleBuffer;
 uint _ParticleCount;
 
+Texture2D<float3> _Texture;
+SamplerState _LinearRepeat;
+
 float2 _Speed; // min, max
 float2 _DT;
 float3 _Gravity;
 float _Decay;
+float _Lifespan;
 
 THREAD
 void Setup(uint3 id : SV_DispatchThreadID)
@@ -35,6 +39,7 @@ void Setup(uint3 id : SV_DispatchThreadID)
     particle.scale = float3(1, 1, 1) * (float) v.fill;
     particle.size = 0;
     particle.velocity = float3(0, 0, 0);
+    particle.color = float3(1, 1, 1);
     particle.speed = lerp(_Speed.x, _Speed.y, nrand(id.xy));
     particle.lifetime = nrand(id.yx);
     _ParticleBuffer[id.x] = particle;
@@ -46,6 +51,7 @@ Voxel GetVoxel(uint id)
     {
         Voxel v;
         v.position = float3(0, 0, 0);
+        v.uv = float2(0, 0);
         v.fill = false;
         return v;
     }
@@ -63,7 +69,7 @@ void Update(uint3 id : SV_DispatchThreadID)
     float3 pos = particle.position.xyz;
     float4 rot = particle.rotation.xyzw;
     float3 vel = particle.velocity.xyz;
-    float lifetime = particle.lifetime - particle.speed * _DT.x;
+    float lifetime = particle.lifetime - particle.speed * _DT.x * saturate(1.0 - _Lifespan);
 
     float flag = step(lifetime, 0) * (float) v.fill;
     lifetime = saturate(lifetime);
@@ -79,6 +85,9 @@ void Update(uint3 id : SV_DispatchThreadID)
     particle.position.xyz = lerp(pos, v.position.xyz, flag);
     particle.rotation.xyzw = lerp(rot, QUATERNION_IDENTITY, flag);
     particle.velocity.xyz = lerp(vel, float3(0, 0, 0), flag);
+    float3 from = particle.color.rgb;
+    float3 to = _Texture.SampleLevel(_LinearRepeat, float2(v.uv), 0).rgb;
+    particle.color.rgb = lerp(from, lerp(from, to, v.fill), _DT.x * 5.0);
     particle.size = lerp(particle.size, (float) v.fill, flag);
     particle.scale = float3(1, 1, 1) * particle.size * scale;
 

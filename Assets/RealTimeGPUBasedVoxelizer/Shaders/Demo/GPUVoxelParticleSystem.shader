@@ -2,6 +2,7 @@
 
 	Properties {
 		_Color ("Color", Color) = (1,1,1,1)
+		_Emission ("Emission", Color) = (0,0,0,0)
 		_Glossiness ("Smoothness", Range(0,1)) = 0.5
 		_Metallic ("Metallic", Range(0,1)) = 0.0
 
@@ -30,7 +31,8 @@
 
 		half _Glossiness;
 		half _Metallic;
-		float4 _Color;
+
+		float4 _Color, _Emission;
 		float4x4 _LocalToWorld, _WorldToLocal;
 		float _Scale;
 
@@ -58,12 +60,14 @@
 			float4x4 m = compose(particle.position.xyz, particle.rotation.xyzw, particle.scale.xyz * _Scale);
 			v.vertex.xyz = mul(m, v.vertex.xyzw).xyz;
 			v.normal.xyz = normalize(mul(m, float4(v.normal.xyz, 0)).xyz);
+			data.color.rgb = particle.color.rgb;
 			#endif
 			#endif
 		}
 
 		void surf (Input IN, inout SurfaceOutputStandard o) {
 			o.Albedo = IN.color;
+      o.Emission = IN.color * _Emission;
 			o.Metallic = _Metallic;
 			o.Smoothness = _Glossiness;
 		}

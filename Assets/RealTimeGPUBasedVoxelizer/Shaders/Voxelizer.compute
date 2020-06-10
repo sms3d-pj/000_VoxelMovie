@@ -10,6 +10,8 @@ float _Unit, _InvUnit, _HalfUnit;
 int _Width, _Height, _Depth;
 
 StructuredBuffer<float3> _VertBuffer;
+StructuredBuffer<float2> _UVBuffer;
+float _EnableUV;
 StructuredBuffer<int> _TriBuffer;
 int _TriangleCount;
 
@@ -123,6 +125,28 @@ bool intersects_tri_aabb(float3 va, float3 vb, float3 vc, AABB aabb)
     return intersects_plane_aabb(pl, aabb);
 }
 
+// https://gamedev.stackexchange.com/questions/23743/whats-the-most-efficient-way-to-find-barycentric-coordinates
+void tri_barycentric(float3 p, float3 a, float3 b, float3 c, out float u, out float v, out float w)
+{
+  float3 v0 = b - a, v1 = c - a, v2 = p - a;
+  float d00 = dot(v0, v0);
+  float d01 = dot(v0, v1);
+  float d11 = dot(v1, v1);
+  float d20 = dot(v2, v0);
+  float d21 = dot(v2, v1);
+  float denom = 1.0 / (d00 * d11 - d01 * d01);
+  v = (d11 * d20 - d01 * d21) * denom;
+  w = (d00 * d21 - d01 * d20) * denom;
+  u = 1.0f - v - w;
+}
+
+float2 tri_barycentric_uv(float3 p, float3 va, float3 vb, float3 vc, float2 uva, float2 uvb, float2 uvc)
+{
+  float u, v, w;
+  tri_barycentric(p, va, vb, vc, u, v, w);
+  return uva * u + uvb * v + uvc * w;
+}
+
 int get_voxel_index(int x, int y, int z)
 {
     return z * (_Width * _Height) + y * _Width + x;
@@ -140,6 +164,7 @@ float3 get_voxel_position(int x, int y, int z)
 void get_triangle(
     int idx, 
     out float3 va, out float3 vb, out float3 vc, 
+    out float2 uva, out float2 uvb, out float2 uvc,
     out bool front
 )
 {
@@ -151,12 +176,22 @@ void get_triangle(
     vb = _VertBuffer[ib];
     vc = _VertBuffer[ic];
 
+    if (_EnableUV > 0) {
+      uva = _UVBuffer[ia];
+      uvb = _UVBuffer[ib];
+      uvc = _UVBuffer[ic];
+    }
+    else {
+      uva = uvb = uvc = 0.0;
+    }
+
     float3 normal = cross((vb - va), (vc - vb));
     front = dot(normal, float3(0, 0, 1)) < 0;
 }
 
 void surface(
     float3 va, float3 vb, float3 vc,
+    float2 uva, float2 uvb, float2 uvc,
     bool front
 )
 {
@@ -189,6 +224,7 @@ void surface(
                     uint vid = get_voxel_index(x, y, z);
                     Voxel voxel = _VoxelBuffer[vid];
                     voxel.position = get_voxel_position(x, y, z);
+                    voxel.uv = tri_barycentric_uv(voxel.position, va, vb, vc, uva, uvb, uvc);
                     voxel.front = front;
                     voxel.fill = true;
                     _VoxelBuffer[vid] = voxel;
@@ -206,11 +242,12 @@ void SurfaceFront(uint3 id : SV_DispatchThreadID)
     if(idx >= _TriangleCount) return;
 
     float3 va, vb, vc;
+    float2 uva, uvb, uvc;
     bool front;
-    get_triangle(idx, va, vb, vc, front);
+    get_triangle(idx, va, vb, vc, uva, uvb, uvc, front);
 
     if (!front) return;
-    surface(va, vb, vc, front);
+    surface(va, vb, vc, uva, uvb, uvc, front);
 }
 
 // construct surface in back triangles
@@ -221,11 +258,12 @@ void SurfaceBack (uint3 id : SV_DispatchThreadID)
     if(idx >= _TriangleCount) return;
 
     float3 va, vb, vc;
+    float2 uva, uvb, uvc;
     bool front;
-    get_triangle(idx, va, vb, vc, front);
+    get_triangle(idx, va, vb, vc, uva, uvb, uvc, front);
 
     if (front) return;
-    surface(va, vb, vc, front);
+    surface(va, vb, vc, uva, uvb, uvc, front);
 }
 
 // fill inside of a mesh
@@ -278,6 +316,7 @@ void Volume(uint3 id : SV_DispatchThreadID)
         {
             Voxel v;
             v.position = get_voxel_position(x, y, z2);
+            v.uv = voxel.uv;
             v.fill = true;
             v.front = false;
             _VoxelBuffer[get_voxel_index(x, y, z2)] = v;

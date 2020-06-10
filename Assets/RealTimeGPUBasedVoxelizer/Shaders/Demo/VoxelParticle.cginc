@@ -7,6 +7,7 @@ struct VoxelParticle
     float4 rotation;
     float3 scale;
     float3 velocity;
+    float3 color;
     float speed;
     float size;
     float lifetime;

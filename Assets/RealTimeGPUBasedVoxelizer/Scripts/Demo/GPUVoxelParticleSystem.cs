@@ -18,6 +18,7 @@ namespace Voxelizer.Demo
         #endregion
 
         [SerializeField] protected ComputeShader voxelizer, particleCompute;
+        [SerializeField] protected Texture texture;
         [SerializeField] protected SkinnedMeshRenderer skinned;
         [SerializeField] protected Material material;
         [SerializeField] protected ShadowCastingMode castShadows = ShadowCastingMode.On;
@@ -32,6 +33,7 @@ namespace Voxelizer.Demo
         [SerializeField] protected float speedScaleMin = 2.0f, speedScaleMax = 5.0f;
         [SerializeField] protected Vector3 gravity = Vector3.zero;
         [SerializeField, Range(0.5f, 1f)] protected float decay = 0.92f;
+        [SerializeField, Range(0.0f, 1f)] protected float lifespan = 0.5f;
 
         #endregion
 
@@ -113,6 +115,7 @@ namespace Voxelizer.Demo
             particleCompute.SetBuffer(setupKer.Index, kVoxelBufferKey, data.Buffer);
             particleCompute.SetInt(kVoxelCountKey, data.Buffer.count);
             particleCompute.SetBuffer(setupKer.Index, kParticleBufferKey, particleBuffer);
+            particleCompute.SetTexture(setupKer.Index, "_Texture", texture);
             particleCompute.SetInt(kParticleCountKey, particleBuffer.count);
             particleCompute.SetInt("_Width", data.Width);
             particleCompute.SetInt("_Height", data.Height);
@@ -127,11 +130,13 @@ namespace Voxelizer.Demo
             particleCompute.SetBuffer(kernel.Index, kVoxelBufferKey, data.Buffer);
             particleCompute.SetInt(kVoxelCountKey, data.Buffer.count);
             particleCompute.SetBuffer(kernel.Index, kParticleBufferKey, particleBuffer);
+            particleCompute.SetTexture(kernel.Index, "_Texture", texture);
             particleCompute.SetInt(kParticleCountKey, particleBuffer.count);
 
             particleCompute.SetVector("_DT", new Vector2(dt, 1f / dt));
             particleCompute.SetVector("_Gravity", gravity);
             particleCompute.SetFloat("_Decay", decay);
+            particleCompute.SetFloat("_Lifespan", lifespan);
 
             particleCompute.Dispatch(kernel.Index, particleBuffer.count / (int)kernel.ThreadX + 1, (int)kernel.ThreadY, (int)kernel.ThreadZ);
         }
@@ -242,6 +247,7 @@ namespace Voxelizer.Demo
         public Quaternion rotation;
         public Vector3 scale;
         public Vector3 velocity;
+        public Vector3 color;
         public float speed;
         public float size;
         public float lifetime;

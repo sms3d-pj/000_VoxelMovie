@@ -152,16 +152,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   voxelizer: {fileID: 7200000, guid: 8df92cbc5bd6bb443a81f74803a3e4a2, type: 3}
   particleCompute: {fileID: 7200000, guid: 46143af2d08bafb46a7c8683c88a9146, type: 3}
+  texture: {fileID: 2800000, guid: 86f8514b25dcb8842905b2ff84004762, type: 3}
   skinned: {fileID: 1234419188}
   material: {fileID: 2100000, guid: eb096ae43b954874a963a3b6cca2ebe7, type: 2}
   castShadows: 1
   receiveShadows: 1
-  count: 65000
+  count: 160000
   resolution: 64
   speedScaleMin: 2
   speedScaleMax: 5
   gravity: {x: 0, y: 0, z: 0}
   decay: 0.92
+  lifespan: 0.44
 --- !u!4 &399758525
 Transform:
   m_ObjectHideFlags: 0
@@ -169,13 +171,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 399758523}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: 0, w: 0.7071068}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!1 &594321771
 GameObject:
   m_ObjectHideFlags: 0
@@ -463,6 +465,16 @@ PrefabInstance:
       propertyPath: m_Controller
       value: 
       objectReference: {fileID: 9100000, guid: df140aab4da118141994cfe26185a329, type: 2}
+    - target: {fileID: -6057140222963153312, guid: c73e57e94ea5d5f42aea5508d1dec8c7,
+        type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -6057140222963153312, guid: c73e57e94ea5d5f42aea5508d1dec8c7,
+        type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -4216859302048453862, guid: c73e57e94ea5d5f42aea5508d1dec8c7,
         type: 3}
       propertyPath: m_LocalPosition.x

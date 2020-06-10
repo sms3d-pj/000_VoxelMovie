@@ -58,8 +58,23 @@ namespace Voxelizer {
 			var vertBuffer = new ComputeBuffer(vertices.Length, Marshal.SizeOf(typeof(Vector3)));
 			vertBuffer.SetData(vertices);
 
+            // generate ComputeBuffer representing vertex array
+            var uv = mesh.uv;
+            ComputeBuffer uvBuffer;
+            bool enableUV = uv.Length > 0;
+            if (enableUV)
+            {
+                uvBuffer = new ComputeBuffer(uv.Length, Marshal.SizeOf(typeof(Vector2)));
+                uvBuffer.SetData(uv);
+            }
+            else
+            {
+                uvBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(Vector2)));
+            }
+            voxelizer.SetFloat("_EnableUV", enableUV ? 1f : 0f);
+
             // generate ComputeBuffer representing triangle array
-			var triangles = mesh.triangles;
+            var triangles = mesh.triangles;
 			var triBuffer = new ComputeBuffer(triangles.Length, Marshal.SizeOf(typeof(int)));
 			triBuffer.SetData(triangles);
 
@@ -67,7 +82,8 @@ namespace Voxelizer {
 			var surfaceFrontKer = new Kernel(voxelizer, "SurfaceFront");
 			voxelizer.SetBuffer(surfaceFrontKer.Index, "_VoxelBuffer", voxelBuffer);
 			voxelizer.SetBuffer(surfaceFrontKer.Index, "_VertBuffer", vertBuffer);
-			voxelizer.SetBuffer(surfaceFrontKer.Index, "_TriBuffer", triBuffer);
+            voxelizer.SetBuffer(surfaceFrontKer.Index, "_UVBuffer", uvBuffer);
+            voxelizer.SetBuffer(surfaceFrontKer.Index, "_TriBuffer", triBuffer);
 
             // set triangle count in a mesh
             var triangleCount = triBuffer.count / 3;
@@ -80,7 +96,8 @@ namespace Voxelizer {
 			var surfaceBackKer = new Kernel(voxelizer, "SurfaceBack");
 			voxelizer.SetBuffer(surfaceBackKer.Index, "_VoxelBuffer", voxelBuffer);
 			voxelizer.SetBuffer(surfaceBackKer.Index, "_VertBuffer", vertBuffer);
-			voxelizer.SetBuffer(surfaceBackKer.Index, "_TriBuffer", triBuffer);
+            voxelizer.SetBuffer(surfaceBackKer.Index, "_UVBuffer", uvBuffer);
+            voxelizer.SetBuffer(surfaceBackKer.Index, "_TriBuffer", triBuffer);
 			voxelizer.Dispatch(surfaceBackKer.Index, triangleCount / (int)surfaceBackKer.ThreadX + 1, (int)surfaceBackKer.ThreadY, (int)surfaceBackKer.ThreadZ);
 
             // send voxel data to GPU kernel "Volume"
@@ -92,6 +109,7 @@ namespace Voxelizer {
 
 			// dispose unnecessary mesh data
 			vertBuffer.Release();
+			uvBuffer.Release();
 			triBuffer.Release();
 
 			return new GPUVoxelData(voxelBuffer, width, height, depth, unit);

@@ -12,6 +12,7 @@ namespace Voxelizer
     public struct Voxel_t
     {
         public Vector3 position;
+        public Vector2 uv;
         public uint fill;
         public uint front;
 
